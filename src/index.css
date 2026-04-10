@@ -1,0 +1,78 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-dark: #1a0a2e;
+  --bg-gradient-start: #2d1b69;
+  --bg-gradient-end: #11052c;
+  --gold: #ffd700;
+  --gold-light: #ffe55c;
+  --card-bg: #2a1f5e;
+  --card-border: #4a3f8e;
+  --text-primary: #ffffff;
+  --text-secondary: #b8b8d4;
+  --correct: #00e676;
+  --wrong: #ff1744;
+  --selected: #ff9100;
+  --overlay: rgba(10, 5, 30, 0.85);
+
+  --font-heading: 'Secular One', 'Rubik', sans-serif;
+  --font-body: 'Heebo', 'Rubik', sans-serif;
+}
+
+html {
+  font-size: 16px;
+  direction: rtl;
+}
+
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+  direction: rtl;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
