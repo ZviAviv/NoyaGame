@@ -117,17 +117,20 @@ export default function WelcomeScreen() {
 
   const adminLinkStyle: CSSProperties = {
     position: 'absolute',
-    bottom: '1.5rem',
-    left: '50%',
-    transform: 'translateX(-50%)',
+    top: '1rem',
+    left: '1rem',
     color: theme.colors.textSecondary,
-    background: 'none',
-    border: `1px solid ${theme.colors.cardBorder}`,
-    borderRadius: theme.borderRadius.sm,
-    padding: '0.4rem 1rem',
-    fontSize: '0.85rem',
+    background: `${theme.colors.cardBg}88`,
+    border: 'none',
+    borderRadius: '50%',
+    width: '2.5rem',
+    height: '2.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.2rem',
     cursor: 'pointer',
-    opacity: 0.6,
+    opacity: 0.5,
     transition: 'opacity 0.2s',
     zIndex: 1,
   };
@@ -155,10 +158,10 @@ export default function WelcomeScreen() {
           animate={{ rotate: [0, -10, 10, -10, 0] }}
           transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
         >
-          💎
+          🍍
         </motion.div>
 
-        <h1 style={titleStyle}>מי רוצה להיות מיליארדר?</h1>
+        <h1 style={titleStyle}>מי רוצה להיות מיליונויה</h1>
         <p style={subtitleStyle}>המשחק הגדול מתחיל עכשיו</p>
       </motion.div>
 
@@ -177,7 +180,18 @@ export default function WelcomeScreen() {
             transition={{ delay: 0.6 + i * 0.08 }}
             whileHover={{ scale: 1.05, y: -3 }}
           >
-            <span style={{ fontSize: '1.5rem' }}>{person.avatarEmoji}</span>
+            {person.avatarUrl ? (
+              <img src={person.avatarUrl} alt={person.name} style={{ width: '2.2rem', height: '2.2rem', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{
+                width: '2.2rem', height: '2.2rem', borderRadius: '50%',
+                background: `linear-gradient(135deg, ${person.color}, ${person.color}88)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.9rem', fontWeight: 700, color: '#fff', flexShrink: 0,
+              }}>
+                {person.name.charAt(0)}
+              </div>
+            )}
             <span>{person.name}</span>
           </motion.div>
         ))}
@@ -201,7 +215,7 @@ export default function WelcomeScreen() {
         onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
         onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
       >
-        ⚙️ ניהול שאלות
+        ⚙️
       </button>
     </motion.div>
   );

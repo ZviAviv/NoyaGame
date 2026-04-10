@@ -17,7 +17,18 @@ export default function MiniScoreboard({ persons, scores }: Props) {
     <div style={containerStyle}>
       {sorted.map((p) => (
         <div key={p.id} style={itemStyle}>
-          <span style={{ fontSize: '0.9rem' }}>{p.avatarEmoji}</span>
+          {p.avatarUrl ? (
+            <img src={p.avatarUrl} alt={p.name} style={{ width: '1.4rem', height: '1.4rem', borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{
+              width: '1.4rem', height: '1.4rem', borderRadius: '50%',
+              background: `linear-gradient(135deg, ${p.color}, ${p.color}88)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.55rem', fontWeight: 700, color: '#fff',
+            }}>
+              {p.name.charAt(0)}
+            </div>
+          )}
           <span style={{ fontFamily: theme.fonts.heading, fontSize: '0.8rem', color: p.color }}>
             {p.score}
           </span>

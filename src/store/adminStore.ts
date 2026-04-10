@@ -67,6 +67,18 @@ export const useAdminStore = create<AdminState>()(
     }),
     {
       name: 'noya-game-admin',
+      version: 2,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as Record<string, unknown>;
+        if (version < 2) {
+          const persons = (state.persons as Person[]) || [];
+          state.persons = persons.map((p) => ({
+            ...p,
+            avatarUrl: (p as Person).avatarUrl || '',
+          }));
+        }
+        return state as unknown as AdminState;
+      },
     }
   )
 );

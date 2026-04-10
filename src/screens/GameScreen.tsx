@@ -111,8 +111,10 @@ export default function GameScreen() {
             <VideoPlayer
               key="video"
               videoUrl={currentQuestion.videoUrl}
-              personName={linkedPerson?.name}
+              personName={currentQuestion.linkedPersonId === '__guest_stars__' ? 'כוכבים אורחים' : linkedPerson?.name}
               personEmoji={linkedPerson?.avatarEmoji}
+              personAvatarUrl={linkedPerson?.avatarUrl}
+              personColor={linkedPerson?.color}
               onEnd={handleVideoEnd}
             />
           )}

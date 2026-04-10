@@ -74,7 +74,18 @@ export default function ResultsScreen() {
           transition={{ type: 'spring', stiffness: 200, delay: 0.5 }}
         >
           <div style={{ fontSize: '4rem' }}>👑</div>
-          <div style={{ fontSize: '3rem' }}>{winner.avatarEmoji}</div>
+          {winner.avatarUrl ? (
+            <img src={winner.avatarUrl} alt={winner.name} style={{ width: '5rem', height: '5rem', borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{
+              width: '5rem', height: '5rem', borderRadius: '50%',
+              background: `linear-gradient(135deg, ${winner.color}, ${winner.color}88)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '2rem', fontWeight: 700, color: '#fff',
+            }}>
+              {winner.name.charAt(0)}
+            </div>
+          )}
           <h2 style={{ fontFamily: theme.fonts.heading, fontSize: '2rem', margin: '0.5rem 0' }}>
             {winner.name}
           </h2>
@@ -110,7 +121,18 @@ export default function ResultsScreen() {
             }}>
               {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
             </span>
-            <span style={{ fontSize: '1.5rem' }}>{person.avatarEmoji}</span>
+            {person.avatarUrl ? (
+              <img src={person.avatarUrl} alt={person.name} style={{ width: '2rem', height: '2rem', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{
+                width: '2rem', height: '2rem', borderRadius: '50%',
+                background: `linear-gradient(135deg, ${person.color}, ${person.color}88)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.8rem', fontWeight: 700, color: '#fff', flexShrink: 0,
+              }}>
+                {person.name.charAt(0)}
+              </div>
+            )}
             <span style={{ flex: 1, fontWeight: 500 }}>{person.name}</span>
             <span style={{
               fontFamily: theme.fonts.heading,

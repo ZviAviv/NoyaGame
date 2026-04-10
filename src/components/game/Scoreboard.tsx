@@ -57,7 +57,18 @@ export default function Scoreboard({ persons, scores, currentPersonId, wasCorrec
               {idx === 0 && person.score > 0 && (
                 <span style={{ position: 'absolute', top: '-8px', right: '-8px', fontSize: '1.2rem' }}>👑</span>
               )}
-              <span style={{ fontSize: '2rem' }}>{person.avatarEmoji}</span>
+              {person.avatarUrl ? (
+                <img src={person.avatarUrl} alt={person.name} style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{
+                  width: '2.5rem', height: '2.5rem', borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${person.color}, ${person.color}88)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1rem', fontWeight: 700, color: '#fff',
+                }}>
+                  {person.name.charAt(0)}
+                </div>
+              )}
               <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{person.name}</span>
               <div style={barContainerStyle}>
                 <motion.div

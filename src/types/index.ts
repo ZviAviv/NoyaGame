@@ -13,6 +13,7 @@ export interface Person {
   id: string;
   name: string;
   avatarEmoji: string;
+  avatarUrl: string;
   color: string;
 }
 

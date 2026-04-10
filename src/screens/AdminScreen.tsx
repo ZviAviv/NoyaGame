@@ -7,6 +7,8 @@ import { theme } from '../styles/theme';
 import { v4 as uuidv4 } from 'uuid';
 import { CSSProperties } from 'react';
 
+const GUEST_STARS_ID = '__guest_stars__';
+
 const emptyQuestion = (stageNumber: number): Question => ({
   id: uuidv4(),
   stageNumber,
@@ -27,7 +29,8 @@ function PersonManager() {
     addPerson({
       id: uuidv4(),
       name: 'שם חדש',
-      avatarEmoji: '⭐',
+      avatarEmoji: '',
+      avatarUrl: '',
       color: theme.personColors[idx % theme.personColors.length],
     });
   };
@@ -35,7 +38,7 @@ function PersonManager() {
   return (
     <div style={{ marginBottom: '2rem' }}>
       <h3 style={sectionTitleStyle}>👥 ניהול מתמודדים</h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
         {persons.map((p) => (
           <div
             key={p.id}
@@ -45,32 +48,50 @@ function PersonManager() {
               borderRadius: theme.borderRadius.md,
               padding: '0.75rem',
               display: 'flex',
+              flexDirection: 'column',
               gap: '0.5rem',
-              alignItems: 'center',
             }}
           >
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {/* Avatar preview */}
+              {p.avatarUrl ? (
+                <img src={p.avatarUrl} alt={p.name} style={{ width: '2.2rem', height: '2.2rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+              ) : (
+                <div style={{
+                  width: '2.2rem', height: '2.2rem', borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${p.color}, ${p.color}88)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.8rem', fontWeight: 700, color: '#fff', flexShrink: 0,
+                }}>
+                  {p.name.charAt(0)}
+                </div>
+              )}
+              <input
+                style={{ ...inputStyle, width: '7rem', marginBottom: 0 }}
+                value={p.name}
+                onChange={(e) => updatePerson(p.id, { name: e.target.value })}
+                placeholder="שם"
+              />
+              <input
+                style={{ ...inputStyle, width: '4rem', padding: '0.3rem', marginBottom: 0 }}
+                type="color"
+                value={p.color}
+                onChange={(e) => updatePerson(p.id, { color: e.target.value })}
+              />
+              <button
+                style={{ ...smallBtnStyle, background: '#ff174433', color: '#ff6b6b' }}
+                onClick={() => deletePerson(p.id)}
+              >
+                ✕
+              </button>
+            </div>
             <input
-              style={{ ...inputStyle, width: '3rem', textAlign: 'center', fontSize: '1.3rem', padding: '0.3rem' }}
-              value={p.avatarEmoji}
-              onChange={(e) => updatePerson(p.id, { avatarEmoji: e.target.value })}
+              style={{ ...inputStyle, marginBottom: 0, fontSize: '0.8rem' }}
+              value={p.avatarUrl}
+              onChange={(e) => updatePerson(p.id, { avatarUrl: e.target.value })}
+              placeholder="קישור לתמונת פרופיל (URL)..."
+              dir="ltr"
             />
-            <input
-              style={{ ...inputStyle, width: '6rem' }}
-              value={p.name}
-              onChange={(e) => updatePerson(p.id, { name: e.target.value })}
-            />
-            <input
-              style={{ ...inputStyle, width: '5rem', padding: '0.3rem' }}
-              type="color"
-              value={p.color}
-              onChange={(e) => updatePerson(p.id, { color: e.target.value })}
-            />
-            <button
-              style={{ ...smallBtnStyle, background: '#ff174433', color: '#ff6b6b' }}
-              onClick={() => deletePerson(p.id)}
-            >
-              ✕
-            </button>
           </div>
         ))}
       </div>
@@ -155,9 +176,10 @@ function QuestionForm({
         <option value="">בחר מתמודד...</option>
         {persons.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.avatarEmoji} {p.name}
+            {p.name}
           </option>
         ))}
+        <option value={GUEST_STARS_ID}>⭐ כוכבים אורחים</option>
       </select>
 
       <label style={labelStyle}>קישור לסרטון</label>
@@ -165,9 +187,12 @@ function QuestionForm({
         style={inputStyle}
         value={q.videoUrl}
         onChange={(e) => setQ({ ...q, videoUrl: e.target.value })}
-        placeholder="הכנס URL לסרטון..."
+        placeholder="הכנס URL לסרטון (mp4, YouTube, וכו')..."
         dir="ltr"
       />
+      <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '-0.25rem' }}>
+        הסרטון יוצג אחרי בחירת תשובה. ניתן להשאיר ריק
+      </p>
 
       <label style={labelStyle}>רמז (לייפליין רמז)</label>
       <input
@@ -290,6 +315,7 @@ export default function AdminScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {sortedQuestions.map((q, idx) => {
               const person = getPersonForQuestion(q);
+              const isGuestStar = q.linkedPersonId === GUEST_STARS_ID;
               return (
                 <div
                   key={q.id}
@@ -312,6 +338,9 @@ export default function AdminScreen() {
                           flexShrink: 0,
                         }}
                       />
+                    )}
+                    {isGuestStar && (
+                      <span style={{ fontSize: '0.7rem', flexShrink: 0 }}>⭐</span>
                     )}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
                       {q.questionText || 'שאלה ריקה...'}

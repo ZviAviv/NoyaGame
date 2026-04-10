@@ -6,10 +6,12 @@ interface Props {
   videoUrl: string;
   personName?: string;
   personEmoji?: string;
+  personAvatarUrl?: string;
+  personColor?: string;
   onEnd: () => void;
 }
 
-export default function VideoPlayer({ videoUrl, personName, personEmoji, onEnd }: Props) {
+export default function VideoPlayer({ videoUrl, personName, personEmoji, personAvatarUrl, personColor, onEnd }: Props) {
   const hasVideo = videoUrl && videoUrl.trim() !== '';
 
   return (
@@ -32,11 +34,23 @@ export default function VideoPlayer({ videoUrl, personName, personEmoji, onEnd }
         ) : (
           <div style={placeholderStyle}>
             <motion.div
-              style={{ fontSize: '4rem' }}
               animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              {personEmoji || '🎬'}
+              {personAvatarUrl ? (
+                <img src={personAvatarUrl} alt={personName || ''} style={{ width: '5rem', height: '5rem', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : personName ? (
+                <div style={{
+                  width: '5rem', height: '5rem', borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${personColor || '#888'}, ${personColor || '#888'}88)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '2rem', fontWeight: 700, color: '#fff',
+                }}>
+                  {personName.charAt(0)}
+                </div>
+              ) : (
+                <span style={{ fontSize: '4rem' }}>🎬</span>
+              )}
             </motion.div>
             <p style={{ fontFamily: theme.fonts.heading, fontSize: '1.3rem', marginTop: '1rem' }}>
               {personName ? `הסרטון של ${personName}` : 'הסרטון בקרוב...'}
