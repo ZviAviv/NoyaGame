@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { theme } from '../../styles/theme';
 import { CSSProperties } from 'react';
+import { useMediaUrl } from '../../hooks/useMediaUrl';
+import Avatar from '../common/Avatar';
 
 interface Props {
   videoUrl: string;
@@ -11,8 +13,9 @@ interface Props {
   onEnd: () => void;
 }
 
-export default function VideoPlayer({ videoUrl, personName, personEmoji, personAvatarUrl, personColor, onEnd }: Props) {
-  const hasVideo = videoUrl && videoUrl.trim() !== '';
+export default function VideoPlayer({ videoUrl, personName, personAvatarUrl, personColor, onEnd }: Props) {
+  const resolvedVideoUrl = useMediaUrl(videoUrl);
+  const hasVideo = resolvedVideoUrl && resolvedVideoUrl.trim() !== '';
 
   return (
     <motion.div
@@ -25,7 +28,7 @@ export default function VideoPlayer({ videoUrl, personName, personEmoji, personA
       <div style={playerContainerStyle}>
         {hasVideo ? (
           <video
-            src={videoUrl}
+            src={resolvedVideoUrl}
             style={videoStyle}
             autoPlay
             onEnded={onEnd}
@@ -37,17 +40,8 @@ export default function VideoPlayer({ videoUrl, personName, personEmoji, personA
               animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              {personAvatarUrl ? (
-                <img src={personAvatarUrl} alt={personName || ''} style={{ width: '5rem', height: '5rem', borderRadius: '50%', objectFit: 'cover' }} />
-              ) : personName ? (
-                <div style={{
-                  width: '5rem', height: '5rem', borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${personColor || '#888'}, ${personColor || '#888'}88)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '2rem', fontWeight: 700, color: '#fff',
-                }}>
-                  {personName.charAt(0)}
-                </div>
+              {personName ? (
+                <Avatar avatarUrl={personAvatarUrl || ''} name={personName} color={personColor || '#888'} size="5rem" fontSize="2rem" />
               ) : (
                 <span style={{ fontSize: '4rem' }}>🎬</span>
               )}

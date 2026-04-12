@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { theme } from '../../styles/theme';
 import { CSSProperties } from 'react';
+import { useMediaUrl } from '../../hooks/useMediaUrl';
 
 interface Props {
   question: string;
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export default function QuestionCard({ question, stageNumber, totalStages, imageUrl }: Props) {
+  const resolvedImageUrl = useMediaUrl(imageUrl);
+
   return (
     <motion.div
       style={cardStyle}
@@ -21,9 +24,9 @@ export default function QuestionCard({ question, stageNumber, totalStages, image
       <div style={stageBadgeStyle}>
         שאלה {stageNumber} מתוך {totalStages}
       </div>
-      {imageUrl && imageUrl.trim() !== '' && (
+      {resolvedImageUrl && (
         <motion.img
-          src={imageUrl}
+          src={resolvedImageUrl}
           alt=""
           style={questionImageStyle}
           initial={{ opacity: 0, scale: 0.9 }}

@@ -6,25 +6,91 @@ import { Question, Person } from '../types';
 import { theme } from '../styles/theme';
 import { v4 as uuidv4 } from 'uuid';
 import { CSSProperties } from 'react';
+import { saveMedia, isIdbUrl, deleteMedia, getIdbId } from '../utils/mediaStore';
+import { useMediaUrl } from '../hooks/useMediaUrl';
+import Avatar from '../components/common/Avatar';
 
 const GUEST_STARS_ID = '__guest_stars__';
 
-function handleFileToBase64(file: File, maxWidth: number, callback: (dataUrl: string) => void) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const scale = Math.min(1, maxWidth / img.width);
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      callback(canvas.toDataURL('image/jpeg', 0.7));
-    };
-    img.src = e.target?.result as string;
-  };
-  reader.readAsDataURL(file);
+async function handleFileUpload(file: File, callback: (url: string) => void) {
+  const url = await saveMedia(file);
+  callback(url);
+}
+
+async function handleClearMedia(currentUrl: string, callback: (url: string) => void) {
+  if (isIdbUrl(currentUrl)) {
+    await deleteMedia(getIdbId(currentUrl));
+  }
+  callback('');
+}
+
+function MediaUploadField({
+  value,
+  accept,
+  placeholder,
+  buttonText,
+  uploadedText,
+  onChange,
+  previewType,
+}: {
+  value: string;
+  accept: string;
+  placeholder: string;
+  buttonText: string;
+  uploadedText: string;
+  onChange: (url: string) => void;
+  previewType: 'image' | 'video';
+}) {
+  const resolvedUrl = useMediaUrl(value);
+  const isUploaded = isIdbUrl(value);
+
+  return (
+    <>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <input
+          style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
+          value={isUploaded ? uploadedText : value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          dir="ltr"
+          readOnly={isUploaded}
+        />
+        <label style={{ ...smallBtnStyle, background: '#6c5ce722', color: '#a29bfe', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          {buttonText}
+          <input type="file" accept={accept} style={{ display: 'none' }} onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file, onChange);
+          }} />
+        </label>
+        {value && (
+          <button
+            style={{ ...smallBtnStyle, background: '#ff174422', color: '#ff6b6b', fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+            onClick={() => handleClearMedia(value, onChange)}
+          >✕</button>
+        )}
+      </div>
+      {resolvedUrl && previewType === 'image' && (
+        <div style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
+          <img
+            src={resolvedUrl}
+            alt="תצוגה מקדימה"
+            style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: theme.borderRadius.sm, border: `1px solid ${theme.colors.cardBorder}` }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
+      {resolvedUrl && previewType === 'video' && (
+        <div style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
+          <video
+            src={resolvedUrl}
+            style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: theme.borderRadius.sm, border: `1px solid ${theme.colors.cardBorder}` }}
+            controls
+            muted
+          />
+        </div>
+      )}
+    </>
+  );
 }
 
 const emptyQuestion = (stageNumber: number): Question => ({
@@ -72,19 +138,7 @@ function PersonManager() {
             }}
           >
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              {/* Avatar preview */}
-              {p.avatarUrl ? (
-                <img src={p.avatarUrl} alt={p.name} style={{ width: '2.2rem', height: '2.2rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-              ) : (
-                <div style={{
-                  width: '2.2rem', height: '2.2rem', borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${p.color}, ${p.color}88)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.8rem', fontWeight: 700, color: '#fff', flexShrink: 0,
-                }}>
-                  {p.name.charAt(0)}
-                </div>
-              )}
+              <Avatar avatarUrl={p.avatarUrl} name={p.name} color={p.color} size="2.2rem" fontSize="0.8rem" />
               <input
                 style={{ ...inputStyle, width: '7rem', marginBottom: 0 }}
                 value={p.name}
@@ -107,23 +161,23 @@ function PersonManager() {
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <input
                 style={{ ...inputStyle, marginBottom: 0, fontSize: '0.8rem', flex: 1 }}
-                value={p.avatarUrl.startsWith('data:') ? '(תמונה הועלתה)' : p.avatarUrl}
+                value={isIdbUrl(p.avatarUrl) ? '(תמונה הועלתה)' : p.avatarUrl}
                 onChange={(e) => updatePerson(p.id, { avatarUrl: e.target.value })}
                 placeholder="קישור לתמונה או העלה קובץ →"
                 dir="ltr"
-                readOnly={p.avatarUrl.startsWith('data:')}
+                readOnly={isIdbUrl(p.avatarUrl)}
               />
               <label style={{ ...smallBtnStyle, background: '#6c5ce722', color: '#a29bfe', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
                 📷 העלה
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) handleFileToBase64(file, 200, (dataUrl) => updatePerson(p.id, { avatarUrl: dataUrl }));
+                  if (file) handleFileUpload(file, (url) => updatePerson(p.id, { avatarUrl: url }));
                 }} />
               </label>
               {p.avatarUrl && (
                 <button
                   style={{ ...smallBtnStyle, background: '#ff174422', color: '#ff6b6b', fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
-                  onClick={() => updatePerson(p.id, { avatarUrl: '' })}
+                  onClick={() => handleClearMedia(p.avatarUrl, (url) => updatePerson(p.id, { avatarUrl: url }))}
                 >✕</button>
               )}
             </div>
@@ -203,39 +257,15 @@ function QuestionForm({
       </p>
 
       <label style={labelStyle}>תמונה לשאלה</label>
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-        <input
-          style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
-          value={q.imageUrl.startsWith('data:') ? '(תמונה הועלתה)' : q.imageUrl}
-          onChange={(e) => setQ({ ...q, imageUrl: e.target.value })}
-          placeholder="קישור לתמונה או העלה קובץ →"
-          dir="ltr"
-          readOnly={q.imageUrl.startsWith('data:')}
-        />
-        <label style={{ ...smallBtnStyle, background: '#6c5ce722', color: '#a29bfe', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          📷 העלה תמונה
-          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFileToBase64(file, 600, (dataUrl) => setQ({ ...q, imageUrl: dataUrl }));
-          }} />
-        </label>
-        {q.imageUrl && (
-          <button
-            style={{ ...smallBtnStyle, background: '#ff174422', color: '#ff6b6b', fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
-            onClick={() => setQ({ ...q, imageUrl: '' })}
-          >✕</button>
-        )}
-      </div>
-      {q.imageUrl && (
-        <div style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
-          <img
-            src={q.imageUrl}
-            alt="תצוגה מקדימה"
-            style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: theme.borderRadius.sm, border: `1px solid ${theme.colors.cardBorder}` }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-        </div>
-      )}
+      <MediaUploadField
+        value={q.imageUrl}
+        accept="image/*"
+        placeholder="קישור לתמונה או העלה קובץ →"
+        buttonText="📷 העלה תמונה"
+        uploadedText="(תמונה הועלתה)"
+        onChange={(url) => setQ({ ...q, imageUrl: url })}
+        previewType="image"
+      />
 
       <label style={labelStyle}>מתמודד מקושר</label>
       <select
@@ -252,13 +282,15 @@ function QuestionForm({
         <option value={GUEST_STARS_ID}>⭐ כוכבים אורחים</option>
       </select>
 
-      <label style={labelStyle}>קישור לסרטון</label>
-      <input
-        style={inputStyle}
+      <label style={labelStyle}>סרטון</label>
+      <MediaUploadField
         value={q.videoUrl}
-        onChange={(e) => setQ({ ...q, videoUrl: e.target.value })}
-        placeholder="הכנס URL לסרטון (mp4, YouTube, וכו')..."
-        dir="ltr"
+        accept="video/*"
+        placeholder="קישור לסרטון או העלה קובץ →"
+        buttonText="🎬 העלה סרטון"
+        uploadedText="(סרטון הועלה)"
+        onChange={(url) => setQ({ ...q, videoUrl: url })}
+        previewType="video"
       />
       <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '-0.25rem' }}>
         הסרטון יוצג אחרי בחירת תשובה. ניתן להשאיר ריק

@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { useAdminStore } from '../store/adminStore';
 import { theme } from '../styles/theme';
 import { CSSProperties, useEffect, useState } from 'react';
+import Avatar from '../components/common/Avatar';
 
 const floatingEmojis = ['🎂', '🎁', '🎈', '🎉', '🎊', '✨', '🌟', '💫', '🥳', '🎶'];
 
@@ -180,18 +181,7 @@ export default function WelcomeScreen() {
             transition={{ delay: 0.6 + i * 0.08 }}
             whileHover={{ scale: 1.05, y: -3 }}
           >
-            {person.avatarUrl ? (
-              <img src={person.avatarUrl} alt={person.name} style={{ width: '2.2rem', height: '2.2rem', borderRadius: '50%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{
-                width: '2.2rem', height: '2.2rem', borderRadius: '50%',
-                background: `linear-gradient(135deg, ${person.color}, ${person.color}88)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.9rem', fontWeight: 700, color: '#fff', flexShrink: 0,
-              }}>
-                {person.name.charAt(0)}
-              </div>
-            )}
+            <Avatar avatarUrl={person.avatarUrl} name={person.name} color={person.color} size="2.2rem" fontSize="0.9rem" />
             <span>{person.name}</span>
           </motion.div>
         ))}

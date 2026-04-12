@@ -5,6 +5,7 @@ import { useAdminStore } from '../store/adminStore';
 import { theme } from '../styles/theme';
 import confetti from 'canvas-confetti';
 import { CSSProperties } from 'react';
+import Avatar from '../components/common/Avatar';
 
 export default function ResultsScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
@@ -74,18 +75,7 @@ export default function ResultsScreen() {
           transition={{ type: 'spring', stiffness: 200, delay: 0.5 }}
         >
           <div style={{ fontSize: '4rem' }}>👑</div>
-          {winner.avatarUrl ? (
-            <img src={winner.avatarUrl} alt={winner.name} style={{ width: '5rem', height: '5rem', borderRadius: '50%', objectFit: 'cover' }} />
-          ) : (
-            <div style={{
-              width: '5rem', height: '5rem', borderRadius: '50%',
-              background: `linear-gradient(135deg, ${winner.color}, ${winner.color}88)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '2rem', fontWeight: 700, color: '#fff',
-            }}>
-              {winner.name.charAt(0)}
-            </div>
-          )}
+          <Avatar avatarUrl={winner.avatarUrl} name={winner.name} color={winner.color} size="5rem" fontSize="2rem" />
           <h2 style={{ fontFamily: theme.fonts.heading, fontSize: '2rem', margin: '0.5rem 0' }}>
             {winner.name}
           </h2>
@@ -121,18 +111,7 @@ export default function ResultsScreen() {
             }}>
               {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
             </span>
-            {person.avatarUrl ? (
-              <img src={person.avatarUrl} alt={person.name} style={{ width: '2rem', height: '2rem', borderRadius: '50%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{
-                width: '2rem', height: '2rem', borderRadius: '50%',
-                background: `linear-gradient(135deg, ${person.color}, ${person.color}88)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.8rem', fontWeight: 700, color: '#fff', flexShrink: 0,
-              }}>
-                {person.name.charAt(0)}
-              </div>
-            )}
+            <Avatar avatarUrl={person.avatarUrl} name={person.name} color={person.color} size="2rem" fontSize="0.8rem" />
             <span style={{ flex: 1, fontWeight: 500 }}>{person.name}</span>
             <span style={{
               fontFamily: theme.fonts.heading,
