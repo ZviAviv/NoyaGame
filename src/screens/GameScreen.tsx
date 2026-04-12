@@ -19,7 +19,7 @@ export default function GameScreen() {
   const {
     currentStage, stagePhase, selectedAnswer,
     advancePhase, nextStage, personScores, selectAnswer,
-    lifelinesUsed, fiftyFiftyEliminated, useLifeline,
+    lifelinesUsed, fiftyFiftyEliminated, useLifeline, setScreen,
   } = useGameStore();
   const { questions, persons } = useAdminStore();
   const updateScoresRef = useRef(false);
@@ -101,7 +101,14 @@ export default function GameScreen() {
           disabled={stagePhase !== 'showing_question'}
         />
         <StageProgress current={currentStage} total={sortedQuestions.length} />
-        <MiniScoreboard persons={persons} scores={personScores} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <MiniScoreboard persons={persons} scores={personScores} />
+          <button
+            style={homeBtnStyle}
+            onClick={() => { if (window.confirm('לחזור למסך הבית? ההתקדמות תאבד.')) setScreen('welcome'); }}
+            title="מסך הבית"
+          >🏠</button>
+        </div>
       </div>
 
       {/* Main game area */}
@@ -180,6 +187,22 @@ const topBarStyle: CSSProperties = {
   justifyContent: 'space-between',
   padding: '1rem 2rem',
   zIndex: 10,
+};
+
+const homeBtnStyle: CSSProperties = {
+  background: 'rgba(255,255,255,0.08)',
+  border: 'none',
+  borderRadius: '50%',
+  width: '2.2rem',
+  height: '2.2rem',
+  fontSize: '1rem',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  opacity: 0.6,
+  transition: 'opacity 0.2s',
+  flexShrink: 0,
 };
 
 const gameAreaStyle: CSSProperties = {
