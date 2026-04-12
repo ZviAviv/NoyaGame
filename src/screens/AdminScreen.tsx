@@ -9,6 +9,24 @@ import { CSSProperties } from 'react';
 
 const GUEST_STARS_ID = '__guest_stars__';
 
+function handleFileToBase64(file: File, maxWidth: number, callback: (dataUrl: string) => void) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, maxWidth / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      callback(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+}
+
 const emptyQuestion = (stageNumber: number): Question => ({
   id: uuidv4(),
   stageNumber,
@@ -86,13 +104,29 @@ function PersonManager() {
                 ✕
               </button>
             </div>
-            <input
-              style={{ ...inputStyle, marginBottom: 0, fontSize: '0.8rem' }}
-              value={p.avatarUrl}
-              onChange={(e) => updatePerson(p.id, { avatarUrl: e.target.value })}
-              placeholder="קישור לתמונת פרופיל (URL)..."
-              dir="ltr"
-            />
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                style={{ ...inputStyle, marginBottom: 0, fontSize: '0.8rem', flex: 1 }}
+                value={p.avatarUrl.startsWith('data:') ? '(תמונה הועלתה)' : p.avatarUrl}
+                onChange={(e) => updatePerson(p.id, { avatarUrl: e.target.value })}
+                placeholder="קישור לתמונה או העלה קובץ →"
+                dir="ltr"
+                readOnly={p.avatarUrl.startsWith('data:')}
+              />
+              <label style={{ ...smallBtnStyle, background: '#6c5ce722', color: '#a29bfe', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
+                📷 העלה
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileToBase64(file, 200, (dataUrl) => updatePerson(p.id, { avatarUrl: dataUrl }));
+                }} />
+              </label>
+              {p.avatarUrl && (
+                <button
+                  style={{ ...smallBtnStyle, background: '#ff174422', color: '#ff6b6b', fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                  onClick={() => updatePerson(p.id, { avatarUrl: '' })}
+                >✕</button>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -169,13 +203,29 @@ function QuestionForm({
       </p>
 
       <label style={labelStyle}>תמונה לשאלה</label>
-      <input
-        style={inputStyle}
-        value={q.imageUrl}
-        onChange={(e) => setQ({ ...q, imageUrl: e.target.value })}
-        placeholder="קישור לתמונה (URL) — תוצג מעל השאלה..."
-        dir="ltr"
-      />
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <input
+          style={{ ...inputStyle, flex: 1, marginBottom: 0 }}
+          value={q.imageUrl.startsWith('data:') ? '(תמונה הועלתה)' : q.imageUrl}
+          onChange={(e) => setQ({ ...q, imageUrl: e.target.value })}
+          placeholder="קישור לתמונה או העלה קובץ →"
+          dir="ltr"
+          readOnly={q.imageUrl.startsWith('data:')}
+        />
+        <label style={{ ...smallBtnStyle, background: '#6c5ce722', color: '#a29bfe', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          📷 העלה תמונה
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileToBase64(file, 600, (dataUrl) => setQ({ ...q, imageUrl: dataUrl }));
+          }} />
+        </label>
+        {q.imageUrl && (
+          <button
+            style={{ ...smallBtnStyle, background: '#ff174422', color: '#ff6b6b', fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
+            onClick={() => setQ({ ...q, imageUrl: '' })}
+          >✕</button>
+        )}
+      </div>
       {q.imageUrl && (
         <div style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
           <img
