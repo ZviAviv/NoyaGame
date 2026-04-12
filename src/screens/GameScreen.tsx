@@ -138,6 +138,7 @@ export default function GameScreen() {
               question={currentQuestion.questionText}
               stageNumber={currentStage + 1}
               totalStages={sortedQuestions.length}
+              imageUrl={currentQuestion.imageUrl}
             />
             <AnswerGrid
               answers={currentQuestion.answers}

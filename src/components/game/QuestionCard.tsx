@@ -6,9 +6,10 @@ interface Props {
   question: string;
   stageNumber: number;
   totalStages: number;
+  imageUrl?: string;
 }
 
-export default function QuestionCard({ question, stageNumber, totalStages }: Props) {
+export default function QuestionCard({ question, stageNumber, totalStages, imageUrl }: Props) {
   return (
     <motion.div
       style={cardStyle}
@@ -20,6 +21,16 @@ export default function QuestionCard({ question, stageNumber, totalStages }: Pro
       <div style={stageBadgeStyle}>
         שאלה {stageNumber} מתוך {totalStages}
       </div>
+      {imageUrl && imageUrl.trim() !== '' && (
+        <motion.img
+          src={imageUrl}
+          alt=""
+          style={questionImageStyle}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        />
+      )}
       <h2 style={questionTextStyle}>{question}</h2>
     </motion.div>
   );
@@ -43,6 +54,15 @@ const stageBadgeStyle: CSSProperties = {
   color: theme.colors.gold,
   marginBottom: '1rem',
   opacity: 0.8,
+};
+
+const questionImageStyle: CSSProperties = {
+  maxWidth: '100%',
+  maxHeight: '250px',
+  borderRadius: theme.borderRadius.md,
+  marginBottom: '1rem',
+  objectFit: 'contain',
+  border: `1px solid ${theme.colors.cardBorder}`,
 };
 
 const questionTextStyle: CSSProperties = {

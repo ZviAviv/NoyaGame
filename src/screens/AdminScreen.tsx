@@ -16,6 +16,7 @@ const emptyQuestion = (stageNumber: number): Question => ({
   answers: ['', '', '', ''],
   correctAnswerIndex: 0,
   linkedPersonId: '',
+  imageUrl: '',
   hintText: '',
   videoUrl: '',
   phoneFriendText: '',
@@ -166,6 +167,25 @@ function QuestionForm({
       <p style={{ fontSize: '0.8rem', color: theme.colors.textSecondary, marginTop: '0.25rem' }}>
         לחץ על האות כדי לסמן תשובה נכונה
       </p>
+
+      <label style={labelStyle}>תמונה לשאלה</label>
+      <input
+        style={inputStyle}
+        value={q.imageUrl}
+        onChange={(e) => setQ({ ...q, imageUrl: e.target.value })}
+        placeholder="קישור לתמונה (URL) — תוצג מעל השאלה..."
+        dir="ltr"
+      />
+      {q.imageUrl && (
+        <div style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
+          <img
+            src={q.imageUrl}
+            alt="תצוגה מקדימה"
+            style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: theme.borderRadius.sm, border: `1px solid ${theme.colors.cardBorder}` }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
 
       <label style={labelStyle}>מתמודד מקושר</label>
       <select

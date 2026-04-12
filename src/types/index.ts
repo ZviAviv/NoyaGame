@@ -24,6 +24,7 @@ export interface Question {
   answers: [string, string, string, string];
   correctAnswerIndex: number;
   linkedPersonId: string;
+  imageUrl: string;
   hintText: string;
   videoUrl: string;
   phoneFriendText: string;
