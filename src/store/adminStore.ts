@@ -3,6 +3,23 @@ import { persist } from 'zustand/middleware';
 import { AdminState, Person, Question } from '../types';
 import { defaultPersons } from '../data/persons';
 import { defaultQuestions } from '../data/defaultQuestions';
+import { saveToCloud, subscribeToCloud } from '../services/cloudSync';
+import { isFirebaseConfigured } from '../firebase';
+
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleSave(state: AdminState) {
+  if (!isFirebaseConfigured) return;
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveToCloud({
+      questions: state.questions,
+      persons: state.persons,
+      correctAnswerAudioUrl: state.correctAnswerAudioUrl,
+      questionRevealAudioUrl: state.questionRevealAudioUrl,
+    }).catch(console.error);
+  }, 1500); // debounce saves by 1.5s
+}
 
 export const useAdminStore = create<AdminState>()(
   persist(
@@ -12,27 +29,42 @@ export const useAdminStore = create<AdminState>()(
       correctAnswerAudioUrl: '',
       questionRevealAudioUrl: '',
 
-      setCorrectAnswerAudioUrl: (url) => set({ correctAnswerAudioUrl: url }),
-      setQuestionRevealAudioUrl: (url) => set({ questionRevealAudioUrl: url }),
+      setCorrectAnswerAudioUrl: (url) => {
+        set({ correctAnswerAudioUrl: url });
+        scheduleSave(get());
+      },
+      setQuestionRevealAudioUrl: (url) => {
+        set({ questionRevealAudioUrl: url });
+        scheduleSave(get());
+      },
 
-      setQuestions: (questions) => set({ questions }),
+      setQuestions: (questions) => {
+        set({ questions });
+        scheduleSave(get());
+      },
 
-      addQuestion: (question) =>
-        set((s) => ({ questions: [...s.questions, question] })),
+      addQuestion: (question) => {
+        set((s) => ({ questions: [...s.questions, question] }));
+        scheduleSave(get());
+      },
 
-      updateQuestion: (id, updates) =>
+      updateQuestion: (id, updates) => {
         set((s) => ({
           questions: s.questions.map((q) =>
             q.id === id ? { ...q, ...updates } : q
           ),
-        })),
+        }));
+        scheduleSave(get());
+      },
 
-      deleteQuestion: (id) =>
+      deleteQuestion: (id) => {
         set((s) => ({
           questions: s.questions.filter((q) => q.id !== id),
-        })),
+        }));
+        scheduleSave(get());
+      },
 
-      reorderQuestions: (fromIndex, toIndex) =>
+      reorderQuestions: (fromIndex, toIndex) => {
         set((s) => {
           const questions = [...s.questions];
           const [moved] = questions.splice(fromIndex, 1);
@@ -43,32 +75,45 @@ export const useAdminStore = create<AdminState>()(
               stageNumber: i + 1,
             })),
           };
-        }),
+        });
+        scheduleSave(get());
+      },
 
-      setPersons: (persons) => set({ persons }),
+      setPersons: (persons) => {
+        set({ persons });
+        scheduleSave(get());
+      },
 
-      updatePerson: (id, updates) =>
+      updatePerson: (id, updates) => {
         set((s) => ({
           persons: s.persons.map((p) =>
             p.id === id ? { ...p, ...updates } : p
           ),
-        })),
+        }));
+        scheduleSave(get());
+      },
 
-      addPerson: (person) =>
-        set((s) => ({ persons: [...s.persons, person] })),
+      addPerson: (person) => {
+        set((s) => ({ persons: [...s.persons, person] }));
+        scheduleSave(get());
+      },
 
-      deletePerson: (id) =>
+      deletePerson: (id) => {
         set((s) => ({
           persons: s.persons.filter((p) => p.id !== id),
-        })),
+        }));
+        scheduleSave(get());
+      },
 
-      importData: (data) =>
+      importData: (data) => {
         set({
           questions: data.questions,
           persons: data.persons,
           correctAnswerAudioUrl: data.correctAnswerAudioUrl || '',
           questionRevealAudioUrl: data.questionRevealAudioUrl || '',
-        }),
+        });
+        scheduleSave(get());
+      },
 
       exportData: () => {
         const { questions, persons, correctAnswerAudioUrl, questionRevealAudioUrl } = get();
@@ -95,7 +140,6 @@ export const useAdminStore = create<AdminState>()(
           }));
         }
         if (version < 4) {
-          // Strip per-question audio field (moved to global setting)
           const questions = (state.questions as Record<string, unknown>[]) || [];
           state.questions = questions.map((q) => {
             const { correctAnswerAudioUrl: _removed, ...rest } = q as Record<string, unknown>;
@@ -112,3 +156,15 @@ export const useAdminStore = create<AdminState>()(
     }
   )
 );
+
+// Subscribe to real-time cloud updates (non-admin devices get live changes)
+if (isFirebaseConfigured) {
+  subscribeToCloud((data) => {
+    useAdminStore.setState({
+      questions: data.questions,
+      persons: data.persons,
+      correctAnswerAudioUrl: data.correctAnswerAudioUrl,
+      questionRevealAudioUrl: data.questionRevealAudioUrl,
+    });
+  });
+}
