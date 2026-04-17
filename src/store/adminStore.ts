@@ -9,6 +9,11 @@ export const useAdminStore = create<AdminState>()(
     (set, get) => ({
       questions: defaultQuestions,
       persons: defaultPersons,
+      correctAnswerAudioUrl: '',
+      questionRevealAudioUrl: '',
+
+      setCorrectAnswerAudioUrl: (url) => set({ correctAnswerAudioUrl: url }),
+      setQuestionRevealAudioUrl: (url) => set({ questionRevealAudioUrl: url }),
 
       setQuestions: (questions) => set({ questions }),
 
@@ -58,16 +63,21 @@ export const useAdminStore = create<AdminState>()(
         })),
 
       importData: (data) =>
-        set({ questions: data.questions, persons: data.persons }),
+        set({
+          questions: data.questions,
+          persons: data.persons,
+          correctAnswerAudioUrl: data.correctAnswerAudioUrl || '',
+          questionRevealAudioUrl: data.questionRevealAudioUrl || '',
+        }),
 
       exportData: () => {
-        const { questions, persons } = get();
-        return { questions, persons };
+        const { questions, persons, correctAnswerAudioUrl, questionRevealAudioUrl } = get();
+        return { questions, persons, correctAnswerAudioUrl, questionRevealAudioUrl };
       },
     }),
     {
       name: 'noya-game-admin',
-      version: 3,
+      version: 5,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -83,6 +93,19 @@ export const useAdminStore = create<AdminState>()(
             ...q,
             imageUrl: (q as Question).imageUrl || '',
           }));
+        }
+        if (version < 4) {
+          // Strip per-question audio field (moved to global setting)
+          const questions = (state.questions as Record<string, unknown>[]) || [];
+          state.questions = questions.map((q) => {
+            const { correctAnswerAudioUrl: _removed, ...rest } = q as Record<string, unknown>;
+            void _removed;
+            return rest;
+          });
+          if (!state.correctAnswerAudioUrl) state.correctAnswerAudioUrl = '';
+        }
+        if (version < 5) {
+          if (!state.questionRevealAudioUrl) state.questionRevealAudioUrl = '';
         }
         return state as unknown as AdminState;
       },

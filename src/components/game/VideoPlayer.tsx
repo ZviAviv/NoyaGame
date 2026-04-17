@@ -1,21 +1,22 @@
 import { motion } from 'framer-motion';
 import { theme } from '../../styles/theme';
-import { CSSProperties } from 'react';
+import { CSSProperties, useState } from 'react';
 import { useMediaUrl } from '../../hooks/useMediaUrl';
-import Avatar from '../common/Avatar';
 
 interface Props {
   videoUrl: string;
-  personName?: string;
-  personEmoji?: string;
-  personAvatarUrl?: string;
-  personColor?: string;
   onEnd: () => void;
 }
 
-export default function VideoPlayer({ videoUrl, personName, personAvatarUrl, personColor, onEnd }: Props) {
+export default function VideoPlayer({ videoUrl, onEnd }: Props) {
   const resolvedVideoUrl = useMediaUrl(videoUrl);
   const hasVideo = resolvedVideoUrl && resolvedVideoUrl.trim() !== '';
+  const [isVertical, setIsVertical] = useState(false);
+
+  const handleMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    setIsVertical(video.videoHeight > video.videoWidth);
+  };
 
   return (
     <motion.div
@@ -29,25 +30,23 @@ export default function VideoPlayer({ videoUrl, personName, personAvatarUrl, per
         {hasVideo ? (
           <video
             src={resolvedVideoUrl}
-            style={videoStyle}
+            style={isVertical ? verticalVideoStyle : videoStyle}
             autoPlay
             onEnded={onEnd}
+            onLoadedMetadata={handleMetadata}
             controls={false}
           />
         ) : (
           <div style={placeholderStyle}>
-            <motion.div
+            <motion.span
+              style={{ fontSize: '4rem' }}
               animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              {personName ? (
-                <Avatar avatarUrl={personAvatarUrl || ''} name={personName} color={personColor || '#888'} size="5rem" fontSize="2rem" />
-              ) : (
-                <span style={{ fontSize: '4rem' }}>🎬</span>
-              )}
-            </motion.div>
+              🎬
+            </motion.span>
             <p style={{ fontFamily: theme.fonts.heading, fontSize: '1.3rem', marginTop: '1rem' }}>
-              {personName ? `הסרטון של ${personName}` : 'הסרטון בקרוב...'}
+              הסרטון בקרוב...
             </p>
             <p style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
               📹 הסרטון יתווסף בקרוב
@@ -96,6 +95,16 @@ const videoStyle: CSSProperties = {
   borderRadius: theme.borderRadius.lg,
   border: `2px solid ${theme.colors.cardBorder}`,
   boxShadow: `0 8px 40px rgba(0, 0, 0, 0.5)`,
+};
+
+const verticalVideoStyle: CSSProperties = {
+  maxHeight: '65vh',
+  maxWidth: '100%',
+  width: 'auto',
+  borderRadius: theme.borderRadius.lg,
+  border: `2px solid ${theme.colors.cardBorder}`,
+  boxShadow: `0 8px 40px rgba(0, 0, 0, 0.5)`,
+  display: 'block',
 };
 
 const placeholderStyle: CSSProperties = {

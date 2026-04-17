@@ -11,7 +11,6 @@ interface Props {
 
 const lifelines: { type: LifelineType; label: string; icon: string; key: keyof LifelinesUsed }[] = [
   { type: 'phoneFriend', label: 'חבר טלפוני', icon: '📞', key: 'phoneFriend' },
-  { type: 'fiftyFifty', label: '50:50', icon: '✂️', key: 'fiftyFifty' },
   { type: 'hint', label: 'רמז', icon: '💡', key: 'hint' },
 ];
 

@@ -5,20 +5,35 @@ import { useAdminStore } from '../store/adminStore';
 import { theme } from '../styles/theme';
 import confetti from 'canvas-confetti';
 import { CSSProperties } from 'react';
-import Avatar from '../components/common/Avatar';
 
 export default function ResultsScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const resetGame = useGameStore((s) => s.resetGame);
-  const personScores = useGameStore((s) => s.personScores);
-  const persons = useAdminStore((s) => s.persons);
+  const playerAnswers = useGameStore((s) => s.playerAnswers);
+  const prizeAmounts = useGameStore((s) => s.prizeAmounts);
+  const questions = useAdminStore((s) => s.questions);
   const confettiRef = useRef(false);
 
-  const ranked = [...persons]
-    .map((p) => ({ ...p, score: personScores[p.id] || 0 }))
-    .sort((a, b) => b.score - a.score);
+  const sortedQuestions = [...questions].sort((a, b) => a.stageNumber - b.stageNumber);
 
-  const winner = ranked[0];
+  const correctCount = playerAnswers.filter(
+    (answer, i) => sortedQuestions[i] && answer === sortedQuestions[i].correctAnswerIndex
+  ).length;
+
+  const totalPlayed = sortedQuestions.length;
+
+  // Find the highest correctly answered stage
+  let highestCorrectStage = -1;
+  for (let i = sortedQuestions.length - 1; i >= 0; i--) {
+    if (playerAnswers[i] === sortedQuestions[i]?.correctAnswerIndex) {
+      highestCorrectStage = i;
+      break;
+    }
+  }
+
+  const finalPrize = highestCorrectStage >= 0
+    ? prizeAmounts[Math.min(highestCorrectStage, prizeAmounts.length - 1)]
+    : 0;
 
   useEffect(() => {
     if (confettiRef.current) return;
@@ -47,10 +62,6 @@ export default function ResultsScreen() {
     frame();
   }, []);
 
-  const handleNewGame = () => {
-    resetGame(persons.map((p) => p.id));
-  };
-
   return (
     <motion.div
       style={containerStyle}
@@ -64,77 +75,48 @@ export default function ResultsScreen() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
       >
-        🏆 התוצאות הסופיות! 🏆
+        🏆 המשחק הסתיים! 🏆
       </motion.h1>
 
-      {winner && (
-        <motion.div
-          style={winnerCardStyle}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 200, delay: 0.5 }}
-        >
-          <div style={{ fontSize: '4rem' }}>👑</div>
-          <Avatar avatarUrl={winner.avatarUrl} name={winner.name} color={winner.color} size="5rem" fontSize="2rem" />
-          <h2 style={{ fontFamily: theme.fonts.heading, fontSize: '2rem', margin: '0.5rem 0' }}>
-            {winner.name}
-          </h2>
-          <div style={{ fontSize: '2.5rem', fontFamily: theme.fonts.heading, color: theme.colors.gold }}>
-            {winner.score} נקודות
-          </div>
-        </motion.div>
-      )}
-
       <motion.div
-        style={rankingStyle}
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
+        style={resultCardStyle}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 200, delay: 0.5 }}
       >
-        {ranked.map((person, idx) => (
+        <div style={{ fontSize: '4rem' }}>🎉</div>
+        <div style={statsStyle}>
+          <div style={statStyle}>
+            <span style={statValueStyle}>{correctCount}</span>
+            <span style={statLabelStyle}>מתוך {totalPlayed} שאלות נכונות</span>
+          </div>
+        </div>
+        {finalPrize > 0 && (
           <motion.div
-            key={person.id}
-            style={{
-              ...rankItemStyle,
-              borderColor: idx === 0 ? theme.colors.gold : person.color + '44',
-              background: idx === 0 ? `${theme.colors.gold}11` : `${person.color}11`,
-            }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.9 + idx * 0.1 }}
+            style={prizeDisplayStyle}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
           >
-            <span style={{
-              fontFamily: theme.fonts.heading,
-              fontSize: '1.2rem',
-              color: idx === 0 ? theme.colors.gold : theme.colors.textSecondary,
-              width: '2rem',
-            }}>
-              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
-            </span>
-            <Avatar avatarUrl={person.avatarUrl} name={person.name} color={person.color} size="2rem" fontSize="0.8rem" />
-            <span style={{ flex: 1, fontWeight: 500 }}>{person.name}</span>
-            <span style={{
-              fontFamily: theme.fonts.heading,
-              fontSize: '1.2rem',
-              color: person.color,
-            }}>
-              {person.score}
-            </span>
+            <div style={prizeLabelStyle}>זכיתם ב-</div>
+            <div style={prizeAmountStyle}>
+              {finalPrize.toLocaleString('he-IL')} ₪
+            </div>
           </motion.div>
-        ))}
+        )}
       </motion.div>
 
       <motion.div
         style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
+        transition={{ delay: 1.2 }}
       >
         <motion.button
           style={playAgainStyle}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={handleNewGame}
+          onClick={() => resetGame(questions.length || 15)}
         >
           🔄 משחק חדש
         </motion.button>
@@ -170,31 +152,65 @@ const titleStyle: CSSProperties = {
   marginBottom: '1.5rem',
 };
 
-const winnerCardStyle: CSSProperties = {
+const resultCardStyle: CSSProperties = {
   background: `linear-gradient(135deg, ${theme.colors.cardBg}, ${theme.colors.gold}15)`,
   border: `2px solid ${theme.colors.gold}`,
   borderRadius: theme.borderRadius.lg,
-  padding: '2rem 3rem',
+  padding: '2.5rem 3.5rem',
   textAlign: 'center',
   boxShadow: `0 0 40px ${theme.colors.gold}33`,
-  marginBottom: '2rem',
-};
-
-const rankingStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.5rem',
-  width: '100%',
-  maxWidth: '500px',
+  alignItems: 'center',
+  gap: '1.5rem',
 };
 
-const rankItemStyle: CSSProperties = {
+const statsStyle: CSSProperties = {
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
-  gap: '0.75rem',
-  padding: '0.75rem 1rem',
-  borderRadius: theme.borderRadius.md,
-  border: '1px solid',
+  gap: '0.5rem',
+};
+
+const statStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+};
+
+const statValueStyle: CSSProperties = {
+  fontFamily: theme.fonts.heading,
+  fontSize: '3rem',
+  color: theme.colors.gold,
+};
+
+const statLabelStyle: CSSProperties = {
+  fontSize: '1rem',
+  color: theme.colors.textSecondary,
+};
+
+const prizeDisplayStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '0.25rem',
+  borderTop: `1px solid ${theme.colors.gold}44`,
+  paddingTop: '1rem',
+  width: '100%',
+};
+
+const prizeLabelStyle: CSSProperties = {
+  fontSize: '1rem',
+  color: theme.colors.textSecondary,
+};
+
+const prizeAmountStyle: CSSProperties = {
+  fontFamily: theme.fonts.heading,
+  fontSize: '2.8rem',
+  background: `linear-gradient(135deg, ${theme.colors.gold}, ${theme.colors.goldLight})`,
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  direction: 'ltr',
 };
 
 const playAgainStyle: CSSProperties = {

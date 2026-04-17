@@ -2,8 +2,7 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { useAdminStore } from '../store/adminStore';
 import { theme } from '../styles/theme';
-import { CSSProperties, useEffect, useState } from 'react';
-import Avatar from '../components/common/Avatar';
+import { CSSProperties, useState } from 'react';
 
 const floatingEmojis = ['🎂', '🎁', '🎈', '🎉', '🎊', '✨', '🌟', '💫', '🥳', '🎶'];
 
@@ -39,7 +38,7 @@ function FloatingEmoji({ emoji, delay, x }: { emoji: string; delay: number; x: n
 export default function WelcomeScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
   const resetGame = useGameStore((s) => s.resetGame);
-  const persons = useAdminStore((s) => s.persons);
+  const questions = useAdminStore((s) => s.questions);
   const [particles] = useState(() =>
     Array.from({ length: 15 }, (_, i) => ({
       emoji: floatingEmojis[i % floatingEmojis.length],
@@ -49,7 +48,7 @@ export default function WelcomeScreen() {
   );
 
   const handleStart = () => {
-    resetGame(persons.map((p) => p.id));
+    resetGame(questions.length || 15);
   };
 
   const containerStyle: CSSProperties = {
@@ -81,27 +80,6 @@ export default function WelcomeScreen() {
     color: theme.colors.textSecondary,
     marginBottom: '3rem',
   };
-
-  const personsGridStyle: CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: '1rem',
-    marginBottom: '3rem',
-    maxWidth: '800px',
-  };
-
-  const personCardStyle = (color: string): CSSProperties => ({
-    background: `linear-gradient(135deg, ${color}22, ${color}44)`,
-    border: `2px solid ${color}66`,
-    borderRadius: theme.borderRadius.lg,
-    padding: '0.75rem 1.25rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    fontSize: '1.1rem',
-    fontWeight: 500,
-  });
 
   const buttonStyle: CSSProperties = {
     fontFamily: theme.fonts.heading,
@@ -164,27 +142,6 @@ export default function WelcomeScreen() {
 
         <h1 style={titleStyle}>מי רוצה להיות מיליונויה</h1>
         <p style={subtitleStyle}>המשחק הגדול מתחיל עכשיו</p>
-      </motion.div>
-
-      <motion.div
-        style={personsGridStyle}
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.6 }}
-      >
-        {persons.map((person, i) => (
-          <motion.div
-            key={person.id}
-            style={personCardStyle(person.color)}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 + i * 0.08 }}
-            whileHover={{ scale: 1.05, y: -3 }}
-          >
-            <Avatar avatarUrl={person.avatarUrl} name={person.name} color={person.color} size="2.2rem" fontSize="0.9rem" />
-            <span>{person.name}</span>
-          </motion.div>
-        ))}
       </motion.div>
 
       <motion.button

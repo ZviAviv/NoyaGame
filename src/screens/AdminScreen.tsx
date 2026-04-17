@@ -39,7 +39,7 @@ function MediaUploadField({
   buttonText: string;
   uploadedText: string;
   onChange: (url: string) => void;
-  previewType: 'image' | 'video';
+  previewType: 'image' | 'video' | 'audio';
 }) {
   const resolvedUrl = useMediaUrl(value);
   const isUploaded = isIdbUrl(value);
@@ -87,6 +87,11 @@ function MediaUploadField({
             controls
             muted
           />
+        </div>
+      )}
+      {resolvedUrl && previewType === 'audio' && (
+        <div style={{ marginBottom: '0.5rem' }}>
+          <audio src={resolvedUrl} controls style={{ width: '100%' }} />
         </div>
       )}
     </>
@@ -193,12 +198,10 @@ function PersonManager() {
 
 function QuestionForm({
   question,
-  persons,
   onSave,
   onCancel,
 }: {
   question: Question;
-  persons: Person[];
   onSave: (q: Question) => void;
   onCancel: () => void;
 }) {
@@ -267,21 +270,6 @@ function QuestionForm({
         previewType="image"
       />
 
-      <label style={labelStyle}>מתמודד מקושר</label>
-      <select
-        style={inputStyle}
-        value={q.linkedPersonId}
-        onChange={(e) => setQ({ ...q, linkedPersonId: e.target.value })}
-      >
-        <option value="">בחר מתמודד...</option>
-        {persons.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-        <option value={GUEST_STARS_ID}>⭐ כוכבים אורחים</option>
-      </select>
-
       <label style={labelStyle}>סרטון</label>
       <MediaUploadField
         value={q.videoUrl}
@@ -326,7 +314,7 @@ function QuestionForm({
 
 export default function AdminScreen() {
   const setScreen = useGameStore((s) => s.setScreen);
-  const { questions, persons, addQuestion, updateQuestion, deleteQuestion, reorderQuestions, importData, exportData } =
+  const { questions, persons, correctAnswerAudioUrl, setCorrectAnswerAudioUrl, questionRevealAudioUrl, setQuestionRevealAudioUrl, addQuestion, updateQuestion, deleteQuestion, reorderQuestions, importData, exportData } =
     useAdminStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -411,7 +399,37 @@ export default function AdminScreen() {
 
       <div style={contentStyle}>
         <div style={sidebarStyle}>
-          <PersonManager />
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={sectionTitleStyle}>🎵 שמע לתשובה נכונה</h3>
+            <MediaUploadField
+              value={correctAnswerAudioUrl}
+              accept="audio/*"
+              placeholder="קישור לשמע או העלה קובץ →"
+              buttonText="🎵 העלה שמע"
+              uploadedText="(שמע הועלה)"
+              onChange={setCorrectAnswerAudioUrl}
+              previewType="audio"
+            />
+            <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '-0.25rem' }}>
+              יושמע לכל תשובה נכונה במשחק
+            </p>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={sectionTitleStyle}>🔔 שמע לשאלה חדשה</h3>
+            <MediaUploadField
+              value={questionRevealAudioUrl}
+              accept="audio/*"
+              placeholder="קישור לשמע או העלה קובץ →"
+              buttonText="🔔 העלה שמע"
+              uploadedText="(שמע הועלה)"
+              onChange={setQuestionRevealAudioUrl}
+              previewType="audio"
+            />
+            <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '-0.25rem' }}>
+              יושמע בכל פעם ששאלה חדשה מוצגת
+            </p>
+          </div>
 
           <h3 style={sectionTitleStyle}>📝 שאלות ({sortedQuestions.length})</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -477,8 +495,8 @@ export default function AdminScreen() {
         <div style={mainAreaStyle}>
           {(editingQuestion || isAdding) ? (
             <QuestionForm
+              key={editingId || 'new'}
               question={editingQuestion || emptyQuestion(sortedQuestions.length + 1)}
-              persons={persons}
               onSave={handleSave}
               onCancel={() => { setEditingId(null); setIsAdding(false); }}
             />

@@ -61,7 +61,7 @@ export default function AnswerGrid({
       borderRadius: theme.borderRadius.md,
       padding: '1rem 1.5rem',
       color: theme.colors.textPrimary,
-      fontSize: 'clamp(0.95rem, 2vw, 1.15rem)',
+      fontSize: 'clamp(0.75rem, 1.5vw, 0.9rem)',
       fontWeight: 500,
       cursor: phase === 'showing_question' && !isEliminated ? 'pointer' : 'default',
       opacity,
