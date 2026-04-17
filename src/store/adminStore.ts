@@ -3,13 +3,11 @@ import { persist } from 'zustand/middleware';
 import { AdminState, Person, Question } from '../types';
 import { defaultPersons } from '../data/persons';
 import { defaultQuestions } from '../data/defaultQuestions';
-import { saveToCloud, subscribeToCloud } from '../services/cloudSync';
-import { isFirebaseConfigured } from '../firebase';
+import { saveToCloud, loadFromCloud, subscribeToCloud } from '../services/cloudSync';
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function scheduleSave(state: AdminState) {
-  if (!isFirebaseConfigured) return;
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     saveToCloud({
@@ -157,14 +155,23 @@ export const useAdminStore = create<AdminState>()(
   )
 );
 
-// Subscribe to real-time cloud updates (non-admin devices get live changes)
-if (isFirebaseConfigured) {
-  subscribeToCloud((data) => {
+// Load latest data from cloud on startup, then subscribe to real-time updates
+loadFromCloud().then((data) => {
+  if (data) {
     useAdminStore.setState({
       questions: data.questions,
       persons: data.persons,
       correctAnswerAudioUrl: data.correctAnswerAudioUrl,
       questionRevealAudioUrl: data.questionRevealAudioUrl,
     });
+  }
+}).catch(console.error);
+
+subscribeToCloud((data) => {
+  useAdminStore.setState({
+    questions: data.questions,
+    persons: data.persons,
+    correctAnswerAudioUrl: data.correctAnswerAudioUrl,
+    questionRevealAudioUrl: data.questionRevealAudioUrl,
   });
-}
+});

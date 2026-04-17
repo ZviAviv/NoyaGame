@@ -1,46 +1,37 @@
-/**
- * Cloud sync service using Firebase Firestore + Storage.
- * Falls back to local-only mode if Firebase is not configured.
- */
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage, isFirebaseConfigured } from '../firebase';
+import { supabase } from '../supabase';
 import { AdminState } from '../types';
 import { isIdbUrl, loadMedia, getIdbId } from '../utils/mediaStore';
 
-const GAME_DOC = 'noya-game/data';
-
 type SyncableData = Pick<AdminState, 'questions' | 'persons' | 'correctAnswerAudioUrl' | 'questionRevealAudioUrl'>;
 
-/** Upload a file Blob to Firebase Storage and return its download URL */
+/** Upload a file Blob to Supabase Storage and return its public URL */
 async function uploadToStorage(blob: Blob, path: string): Promise<string> {
-  const storageRef = ref(storage, path);
-  await new Promise<void>((resolve, reject) => {
-    const task = uploadBytesResumable(storageRef, blob);
-    task.on('state_changed', undefined, reject, () => resolve());
+  const { error } = await supabase.storage.from('media').upload(path, blob, {
+    upsert: true,
+    contentType: blob.type,
   });
-  return getDownloadURL(storageRef);
+  if (error) throw error;
+  const { data } = supabase.storage.from('media').getPublicUrl(path);
+  return data.publicUrl;
 }
 
-/** Resolve an idb:// URL to a Firebase Storage URL (uploading if needed) */
+/** Resolve an idb:// URL to a Supabase Storage URL (uploading if needed) */
 async function resolveMediaUrl(url: string): Promise<string> {
   if (!url || !isIdbUrl(url)) return url;
   const id = getIdbId(url);
   const entry = await loadMedia(id);
   if (!entry) return url;
   const ext = entry.name.split('.').pop() || 'bin';
-  const path = `media/${id}.${ext}`;
+  const path = `${id}.${ext}`;
   try {
     return await uploadToStorage(entry.blob, path);
   } catch {
-    return url; // fallback to local if upload fails
+    return url;
   }
 }
 
-/** Save game data to Firestore, uploading any local media to Storage first */
+/** Save game data to Supabase, uploading any local media to Storage first */
 export async function saveToCloud(data: SyncableData): Promise<void> {
-  if (!isFirebaseConfigured) return;
-
   const resolvedQuestions = await Promise.all(
     data.questions.map(async (q) => ({
       ...q,
@@ -56,32 +47,52 @@ export async function saveToCloud(data: SyncableData): Promise<void> {
     }))
   );
 
-  const payload = {
+  const { error } = await supabase.from('game_data').upsert({
+    id: 'main',
     questions: resolvedQuestions,
     persons: resolvedPersons,
-    correctAnswerAudioUrl: await resolveMediaUrl(data.correctAnswerAudioUrl),
-    questionRevealAudioUrl: await resolveMediaUrl(data.questionRevealAudioUrl),
-    updatedAt: Date.now(),
-  };
-
-  const [collection, docId] = GAME_DOC.split('/');
-  await setDoc(doc(db, collection, docId), payload);
-}
-
-/** Load game data from Firestore once */
-export async function loadFromCloud(): Promise<SyncableData | null> {
-  if (!isFirebaseConfigured) return null;
-  const [collection, docId] = GAME_DOC.split('/');
-  const snap = await getDoc(doc(db, collection, docId));
-  if (!snap.exists()) return null;
-  return snap.data() as SyncableData;
-}
-
-/** Subscribe to real-time updates from Firestore */
-export function subscribeToCloud(callback: (data: SyncableData) => void): () => void {
-  if (!isFirebaseConfigured) return () => {};
-  const [collection, docId] = GAME_DOC.split('/');
-  return onSnapshot(doc(db, collection, docId), (snap) => {
-    if (snap.exists()) callback(snap.data() as SyncableData);
+    correct_answer_audio_url: await resolveMediaUrl(data.correctAnswerAudioUrl),
+    question_reveal_audio_url: await resolveMediaUrl(data.questionRevealAudioUrl),
+    updated_at: new Date().toISOString(),
   });
+
+  if (error) console.error('Cloud save failed:', error);
+}
+
+/** Load game data from Supabase once */
+export async function loadFromCloud(): Promise<SyncableData | null> {
+  const { data, error } = await supabase
+    .from('game_data')
+    .select('*')
+    .eq('id', 'main')
+    .single();
+  if (error || !data) return null;
+  return {
+    questions: data.questions || [],
+    persons: data.persons || [],
+    correctAnswerAudioUrl: data.correct_answer_audio_url || '',
+    questionRevealAudioUrl: data.question_reveal_audio_url || '',
+  };
+}
+
+/** Subscribe to real-time updates */
+export function subscribeToCloud(callback: (data: SyncableData) => void): () => void {
+  const channel = supabase
+    .channel('game_data_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'game_data', filter: 'id=eq.main' },
+      (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        callback({
+          questions: (row.questions as SyncableData['questions']) || [],
+          persons: (row.persons as SyncableData['persons']) || [],
+          correctAnswerAudioUrl: (row.correct_answer_audio_url as string) || '',
+          questionRevealAudioUrl: (row.question_reveal_audio_url as string) || '',
+        });
+      }
+    )
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
 }
