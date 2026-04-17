@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { theme } from '../../styles/theme';
 import { CSSProperties, useState } from 'react';
 import { useMediaUrl } from '../../hooks/useMediaUrl';
+import { useMediaType } from '../../hooks/useMediaType';
 
 interface Props {
   videoUrl: string;
@@ -9,12 +10,18 @@ interface Props {
   onEnd: () => void;
 }
 
-export default function VideoPlayer({ videoUrl, postAnswerImageUrl, onEnd }: Props) {
-  const resolvedVideoUrl = useMediaUrl(videoUrl);
-  const resolvedImageUrl = useMediaUrl(postAnswerImageUrl || '');
-  const hasVideo = resolvedVideoUrl && resolvedVideoUrl.trim() !== '';
-  const hasImage = resolvedImageUrl && resolvedImageUrl.trim() !== '';
+export default function VideoPlayer({ videoUrl, onEnd }: Props) {
+  const resolvedUrl = useMediaUrl(videoUrl);
+  const mediaType = useMediaType(videoUrl);
+  const hasMedia = resolvedUrl && resolvedUrl.trim() !== '';
+  const isImage = mediaType === 'image';
   const [isVertical, setIsVertical] = useState(false);
+
+  // keep old names as aliases for unchanged JSX below
+  const resolvedVideoUrl = resolvedUrl;
+  const hasVideo = hasMedia && !isImage;
+  const hasImage = hasMedia && isImage;
+  const resolvedImageUrl = resolvedUrl;
 
   const handleMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;

@@ -9,6 +9,7 @@ import { CSSProperties } from 'react';
 import { saveMedia, isIdbUrl, deleteMedia, getIdbId, idbUrlToBase64, base64ToIdbUrl } from '../utils/mediaStore';
 import { saveToCloud } from '../services/cloudSync';
 import { useMediaUrl } from '../hooks/useMediaUrl';
+import { useMediaType } from '../hooks/useMediaType';
 import Avatar from '../components/common/Avatar';
 
 const GUEST_STARS_ID = '__guest_stars__';
@@ -43,7 +44,9 @@ function MediaUploadField({
   previewType: 'image' | 'video' | 'audio';
 }) {
   const resolvedUrl = useMediaUrl(value);
+  const detectedType = useMediaType(value);
   const isUploaded = isIdbUrl(value);
+  const effectivePreviewType = detectedType ?? previewType;
 
   return (
     <>
@@ -70,7 +73,7 @@ function MediaUploadField({
           >✕</button>
         )}
       </div>
-      {resolvedUrl && previewType === 'image' && (
+      {resolvedUrl && effectivePreviewType === 'image' && (
         <div style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
           <img
             src={resolvedUrl}
@@ -80,7 +83,7 @@ function MediaUploadField({
           />
         </div>
       )}
-      {resolvedUrl && previewType === 'video' && (
+      {resolvedUrl && effectivePreviewType === 'video' && (
         <div style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
           <video
             src={resolvedUrl}
@@ -90,7 +93,7 @@ function MediaUploadField({
           />
         </div>
       )}
-      {resolvedUrl && previewType === 'audio' && (
+      {resolvedUrl && effectivePreviewType === 'audio' && (
         <div style={{ marginBottom: '0.5rem' }}>
           <audio src={resolvedUrl} controls style={{ width: '100%' }} />
         </div>
@@ -272,28 +275,18 @@ function QuestionForm({
         previewType="image"
       />
 
-      <label style={labelStyle}>סרטון אחרי תשובה</label>
+      <label style={labelStyle}>סרטון או תמונה אחרי תשובה</label>
       <MediaUploadField
         value={q.videoUrl}
-        accept="video/*"
-        placeholder="קישור לסרטון או העלה קובץ →"
-        buttonText="🎬 העלה סרטון"
-        uploadedText="(סרטון הועלה)"
+        accept="video/*,image/*"
+        placeholder="קישור לסרטון/תמונה או העלה קובץ →"
+        buttonText="📎 העלה"
+        uploadedText="(קובץ הועלה)"
         onChange={(url) => setQ({ ...q, videoUrl: url })}
         previewType="video"
       />
-      <label style={labelStyle}>תמונה אחרי תשובה</label>
-      <MediaUploadField
-        value={q.postAnswerImageUrl}
-        accept="image/*"
-        placeholder="קישור לתמונה או העלה קובץ →"
-        buttonText="📷 העלה תמונה"
-        uploadedText="(תמונה הועלתה)"
-        onChange={(url) => setQ({ ...q, postAnswerImageUrl: url })}
-        previewType="image"
-      />
       <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '-0.25rem' }}>
-        הסרטון/תמונה יוצגו אחרי בחירת תשובה. ניתן להשאיר ריק
+        יוצג אחרי בחירת תשובה. ניתן להשאיר ריק
       </p>
 
       <label style={labelStyle}>רמז (לייפליין רמז)</label>
