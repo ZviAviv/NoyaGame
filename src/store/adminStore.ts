@@ -155,23 +155,33 @@ export const useAdminStore = create<AdminState>()(
   )
 );
 
-// Load latest data from cloud on startup, then subscribe to real-time updates
-loadFromCloud().then((data) => {
-  if (data) {
+// On startup: local is master — only use cloud if it has MORE questions
+loadFromCloud().then((cloudData) => {
+  const localCount = useAdminStore.getState().questions.length;
+  const cloudCount = cloudData?.questions?.length ?? 0;
+  if (!cloudData || localCount >= cloudCount) {
+    // Local wins — push local up to cloud
+    scheduleSave(useAdminStore.getState());
+  } else {
+    // Cloud has more questions — use cloud
     useAdminStore.setState({
-      questions: data.questions,
-      persons: data.persons,
-      correctAnswerAudioUrl: data.correctAnswerAudioUrl,
-      questionRevealAudioUrl: data.questionRevealAudioUrl,
+      questions: cloudData.questions,
+      persons: cloudData.persons,
+      correctAnswerAudioUrl: cloudData.correctAnswerAudioUrl,
+      questionRevealAudioUrl: cloudData.questionRevealAudioUrl,
     });
   }
 }).catch(console.error);
 
-subscribeToCloud((data) => {
-  useAdminStore.setState({
-    questions: data.questions,
-    persons: data.persons,
-    correctAnswerAudioUrl: data.correctAnswerAudioUrl,
-    questionRevealAudioUrl: data.questionRevealAudioUrl,
-  });
+// Real-time: only apply cloud update if it has more questions than local
+subscribeToCloud((cloudData) => {
+  const localCount = useAdminStore.getState().questions.length;
+  if (cloudData.questions.length > localCount) {
+    useAdminStore.setState({
+      questions: cloudData.questions,
+      persons: cloudData.persons,
+      correctAnswerAudioUrl: cloudData.correctAnswerAudioUrl,
+      questionRevealAudioUrl: cloudData.questionRevealAudioUrl,
+    });
+  }
 });

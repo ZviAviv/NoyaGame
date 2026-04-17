@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../store/gameStore';
 import { useAdminStore } from '../store/adminStore';
@@ -7,6 +7,7 @@ import { theme } from '../styles/theme';
 import { v4 as uuidv4 } from 'uuid';
 import { CSSProperties } from 'react';
 import { saveMedia, isIdbUrl, deleteMedia, getIdbId, idbUrlToBase64, base64ToIdbUrl } from '../utils/mediaStore';
+import { saveToCloud } from '../services/cloudSync';
 import { useMediaUrl } from '../hooks/useMediaUrl';
 import Avatar from '../components/common/Avatar';
 
@@ -318,6 +319,7 @@ export default function AdminScreen() {
     useAdminStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sortedQuestions = [...questions].sort((a, b) => a.stageNumber - b.stageNumber);
@@ -331,6 +333,52 @@ export default function AdminScreen() {
       updateQuestion(q.id, q);
     }
     setEditingId(null);
+  };
+
+  const handleSyncToCloud = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const data = exportData();
+      await saveToCloud(data);
+      alert('✅ סונכרן לענן בהצלחה! כל המכשירים יראו את השאלות.');
+    } catch (e) {
+      alert('❌ שגיאה בסנכרון. בדוק חיבור לאינטרנט.');
+      console.error(e);
+    } finally {
+      setSyncing(false);
+    }
+  }, [exportData]);
+
+  const handleLocalBackup = async () => {
+    const data = exportData();
+    const resolveUrl = (url: string) => idbUrlToBase64(url);
+    const resolvedQuestions = await Promise.all(
+      data.questions.map(async (q) => ({
+        ...q,
+        imageUrl: await resolveUrl(q.imageUrl),
+        videoUrl: await resolveUrl(q.videoUrl),
+      }))
+    );
+    const resolvedPersons = await Promise.all(
+      data.persons.map(async (p) => ({
+        ...p,
+        avatarUrl: await resolveUrl(p.avatarUrl),
+      }))
+    );
+    const exportable = {
+      ...data,
+      questions: resolvedQuestions,
+      persons: resolvedPersons,
+      correctAnswerAudioUrl: await resolveUrl(data.correctAnswerAudioUrl),
+      questionRevealAudioUrl: await resolveUrl(data.questionRevealAudioUrl),
+    };
+    const blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `noya-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleExport = async () => {
@@ -435,9 +483,19 @@ export default function AdminScreen() {
           → חזרה למשחק
         </button>
         <h1 style={{ fontFamily: theme.fonts.heading, fontSize: '1.8rem' }}>⚙️ ניהול המשחק</h1>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            style={{ ...smallBtnStyle, background: syncing ? '#ffffff11' : '#0984e333', color: '#74b9ff', fontWeight: 700 }}
+            onClick={handleSyncToCloud}
+            disabled={syncing}
+          >
+            {syncing ? '⏳ מסנכרן...' : '☁️ סנכרן לענן'}
+          </button>
+          <button style={{ ...smallBtnStyle, background: '#00b89433', color: '#55efc4' }} onClick={handleLocalBackup}>
+            💾 גיבוי מקומי
+          </button>
           <button style={{ ...smallBtnStyle, background: '#6c5ce733', color: '#a29bfe' }} onClick={handleExport}>
-            📤 ייצוא לשיתוף
+            📤 ייצוא
           </button>
           <button
             style={{ ...smallBtnStyle, background: '#00b89433', color: '#55efc4' }}
