@@ -76,3 +76,14 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gold);
 }
+
+/* Ensure ₪ renders as shekel sign, not as Hebrew glyphs */
+@font-face {
+  font-family: 'ShekelFix';
+  src: local('Arial');
+  unicode-range: U+20AA;
+}
+
+body {
+  font-family: 'ShekelFix', var(--font-body);
+}

@@ -34,7 +34,7 @@ export default function PrizeLadder({ prizeAmounts, currentStage }: Props) {
               fontWeight: isCurrent ? 700 : 400,
               fontSize: isCurrent ? '0.85rem' : '0.75rem',
             }}>
-              {amount.toLocaleString('en-US')} <span style={{ fontFamily: 'Arial, sans-serif' }}>₪</span>
+              {amount.toLocaleString('en-US')} ₪
             </span>
           </div>
         );

@@ -40,10 +40,16 @@ export default function GameScreen() {
 
   useEffect(() => {
     if (!resolvedRevealAudioUrl) { revealAudioRef.current = null; return; }
-    revealAudioRef.current = new Audio(resolvedRevealAudioUrl);
+    const audio = new Audio(resolvedRevealAudioUrl);
+    revealAudioRef.current = audio;
+    // Play immediately if we're on the first question and haven't played yet
+    if (prevStageRef.current === -1) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
   }, [resolvedRevealAudioUrl]);
 
-  // Play question reveal sound on each new stage
+  // Play question reveal sound on each new stage (stages 2+)
   useEffect(() => {
     if (prevStageRef.current !== currentStage) {
       prevStageRef.current = currentStage;
@@ -126,8 +132,11 @@ export default function GameScreen() {
         >🏠</button>
       </div>
 
-      {/* Content: prize ladder + game area */}
+      {/* Content: prize ladder (right in RTL) + game area */}
       <div style={contentRowStyle}>
+        {/* Prize ladder sidebar - first child = right side in RTL */}
+        <PrizeLadder prizeAmounts={prizeAmounts} currentStage={currentStage} />
+
         {/* Main game area */}
         <div style={gameAreaStyle}>
           <AnimatePresence mode="wait">
@@ -170,9 +179,6 @@ export default function GameScreen() {
             </>
           )}
         </div>
-
-        {/* Prize ladder sidebar - right */}
-        <PrizeLadder prizeAmounts={prizeAmounts} currentStage={currentStage} />
       </div>
 
       {/* Lifeline overlays */}
@@ -221,7 +227,6 @@ const contentRowStyle: CSSProperties = {
   flex: 1,
   display: 'flex',
   flexDirection: 'row',
-  direction: 'ltr',
   overflow: 'hidden',
 };
 
