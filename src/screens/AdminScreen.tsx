@@ -6,7 +6,7 @@ import { Question, Person } from '../types';
 import { theme } from '../styles/theme';
 import { v4 as uuidv4 } from 'uuid';
 import { CSSProperties } from 'react';
-import { saveMedia, isIdbUrl, deleteMedia, getIdbId } from '../utils/mediaStore';
+import { saveMedia, isIdbUrl, deleteMedia, getIdbId, idbUrlToBase64, base64ToIdbUrl } from '../utils/mediaStore';
 import { useMediaUrl } from '../hooks/useMediaUrl';
 import Avatar from '../components/common/Avatar';
 
@@ -333,9 +333,36 @@ export default function AdminScreen() {
     setEditingId(null);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const data = exportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+    // Resolve all idb:// references to base64 data URIs so the file is self-contained
+    const resolveUrl = (url: string) => idbUrlToBase64(url);
+
+    const resolvedQuestions = await Promise.all(
+      data.questions.map(async (q) => ({
+        ...q,
+        imageUrl: await resolveUrl(q.imageUrl),
+        videoUrl: await resolveUrl(q.videoUrl),
+      }))
+    );
+
+    const resolvedPersons = await Promise.all(
+      data.persons.map(async (p) => ({
+        ...p,
+        avatarUrl: await resolveUrl(p.avatarUrl),
+      }))
+    );
+
+    const exportable = {
+      ...data,
+      questions: resolvedQuestions,
+      persons: resolvedPersons,
+      correctAnswerAudioUrl: await resolveUrl(data.correctAnswerAudioUrl),
+      questionRevealAudioUrl: await resolveUrl(data.questionRevealAudioUrl),
+    };
+
+    const blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -348,12 +375,37 @@ export default function AdminScreen() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string);
-        if (data.questions && data.persons) {
-          importData(data);
-        }
+        if (!data.questions || !data.persons) { alert('קובץ לא תקין'); return; }
+
+        // Re-save any base64 data URIs back into IndexedDB
+        const resolveUrl = (url: string) => base64ToIdbUrl(url);
+
+        const resolvedQuestions = await Promise.all(
+          data.questions.map(async (q: Question) => ({
+            ...q,
+            imageUrl: await resolveUrl(q.imageUrl),
+            videoUrl: await resolveUrl(q.videoUrl),
+          }))
+        );
+
+        const resolvedPersons = await Promise.all(
+          data.persons.map(async (p: Person) => ({
+            ...p,
+            avatarUrl: await resolveUrl(p.avatarUrl),
+          }))
+        );
+
+        importData({
+          ...data,
+          questions: resolvedQuestions,
+          persons: resolvedPersons,
+          correctAnswerAudioUrl: await resolveUrl(data.correctAnswerAudioUrl || ''),
+          questionRevealAudioUrl: await resolveUrl(data.questionRevealAudioUrl || ''),
+        });
+        alert('המשחק יובא בהצלחה!');
       } catch {
         alert('קובץ לא תקין');
       }
@@ -385,7 +437,7 @@ export default function AdminScreen() {
         <h1 style={{ fontFamily: theme.fonts.heading, fontSize: '1.8rem' }}>⚙️ ניהול המשחק</h1>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button style={{ ...smallBtnStyle, background: '#6c5ce733', color: '#a29bfe' }} onClick={handleExport}>
-            📤 ייצוא
+            📤 ייצוא לשיתוף
           </button>
           <button
             style={{ ...smallBtnStyle, background: '#00b89433', color: '#55efc4' }}

@@ -81,3 +81,30 @@ export function isIdbUrl(url: string): boolean {
 export function getIdbId(url: string): string {
   return url.replace('idb://', '');
 }
+
+/** Convert an idb:// URL to a base64 data URI for export. Returns original url if not idb. */
+export async function idbUrlToBase64(url: string): Promise<string> {
+  if (!isIdbUrl(url)) return url;
+  const entry = await loadMedia(getIdbId(url));
+  if (!entry) return url;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(entry.blob);
+  });
+}
+
+/** Save a base64 data URI to IndexedDB and return an idb:// reference. Returns original url if not base64. */
+export async function base64ToIdbUrl(dataUri: string, filename = 'imported'): Promise<string> {
+  if (!dataUri.startsWith('data:')) return dataUri;
+  const mimeMatch = dataUri.match(/^data:([^;]+);base64,/);
+  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+  const base64 = dataUri.split(',')[1];
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: mime });
+  const file = new File([blob], filename, { type: mime });
+  return saveMedia(file);
+}
