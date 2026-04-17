@@ -144,6 +144,7 @@ export default function GameScreen() {
               <VideoPlayer
                 key="video"
                 videoUrl={currentQuestion.videoUrl}
+                postAnswerImageUrl={currentQuestion.postAnswerImageUrl}
                 onEnd={handleVideoEnd}
               />
             )}

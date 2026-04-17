@@ -27,6 +27,7 @@ export interface Question {
   imageUrl: string;
   hintText: string;
   videoUrl: string;
+  postAnswerImageUrl: string;
   phoneFriendText: string;
 }
 

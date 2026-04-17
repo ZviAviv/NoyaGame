@@ -120,7 +120,7 @@ export const useAdminStore = create<AdminState>()(
     }),
     {
       name: 'noya-game-admin',
-      version: 5,
+      version: 6,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -148,6 +148,13 @@ export const useAdminStore = create<AdminState>()(
         }
         if (version < 5) {
           if (!state.questionRevealAudioUrl) state.questionRevealAudioUrl = '';
+        }
+        if (version < 6) {
+          const questions = (state.questions as Question[]) || [];
+          state.questions = questions.map((q) => ({
+            ...q,
+            postAnswerImageUrl: (q as Question).postAnswerImageUrl || '',
+          }));
         }
         return state as unknown as AdminState;
       },

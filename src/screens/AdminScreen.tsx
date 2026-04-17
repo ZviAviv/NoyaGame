@@ -109,6 +109,7 @@ const emptyQuestion = (stageNumber: number): Question => ({
   imageUrl: '',
   hintText: '',
   videoUrl: '',
+  postAnswerImageUrl: '',
   phoneFriendText: '',
 });
 
@@ -271,7 +272,7 @@ function QuestionForm({
         previewType="image"
       />
 
-      <label style={labelStyle}>סרטון</label>
+      <label style={labelStyle}>סרטון אחרי תשובה</label>
       <MediaUploadField
         value={q.videoUrl}
         accept="video/*"
@@ -281,8 +282,18 @@ function QuestionForm({
         onChange={(url) => setQ({ ...q, videoUrl: url })}
         previewType="video"
       />
+      <label style={labelStyle}>תמונה אחרי תשובה</label>
+      <MediaUploadField
+        value={q.postAnswerImageUrl}
+        accept="image/*"
+        placeholder="קישור לתמונה או העלה קובץ →"
+        buttonText="📷 העלה תמונה"
+        uploadedText="(תמונה הועלתה)"
+        onChange={(url) => setQ({ ...q, postAnswerImageUrl: url })}
+        previewType="image"
+      />
       <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '-0.25rem' }}>
-        הסרטון יוצג אחרי בחירת תשובה. ניתן להשאיר ריק
+        הסרטון/תמונה יוצגו אחרי בחירת תשובה. ניתן להשאיר ריק
       </p>
 
       <label style={labelStyle}>רמז (לייפליין רמז)</label>
@@ -357,6 +368,7 @@ export default function AdminScreen() {
         ...q,
         imageUrl: await resolveUrl(q.imageUrl),
         videoUrl: await resolveUrl(q.videoUrl),
+        postAnswerImageUrl: await resolveUrl(q.postAnswerImageUrl),
       }))
     );
     const resolvedPersons = await Promise.all(
@@ -392,6 +404,7 @@ export default function AdminScreen() {
         ...q,
         imageUrl: await resolveUrl(q.imageUrl),
         videoUrl: await resolveUrl(q.videoUrl),
+        postAnswerImageUrl: await resolveUrl(q.postAnswerImageUrl),
       }))
     );
 
@@ -436,6 +449,7 @@ export default function AdminScreen() {
             ...q,
             imageUrl: await resolveUrl(q.imageUrl),
             videoUrl: await resolveUrl(q.videoUrl),
+            postAnswerImageUrl: await resolveUrl(q.postAnswerImageUrl || ''),
           }))
         );
 

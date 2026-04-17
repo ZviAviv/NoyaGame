@@ -5,12 +5,15 @@ import { useMediaUrl } from '../../hooks/useMediaUrl';
 
 interface Props {
   videoUrl: string;
+  postAnswerImageUrl?: string;
   onEnd: () => void;
 }
 
-export default function VideoPlayer({ videoUrl, onEnd }: Props) {
+export default function VideoPlayer({ videoUrl, postAnswerImageUrl, onEnd }: Props) {
   const resolvedVideoUrl = useMediaUrl(videoUrl);
+  const resolvedImageUrl = useMediaUrl(postAnswerImageUrl || '');
   const hasVideo = resolvedVideoUrl && resolvedVideoUrl.trim() !== '';
+  const hasImage = resolvedImageUrl && resolvedImageUrl.trim() !== '';
   const [isVertical, setIsVertical] = useState(false);
 
   const handleMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
@@ -35,6 +38,12 @@ export default function VideoPlayer({ videoUrl, onEnd }: Props) {
             onEnded={onEnd}
             onLoadedMetadata={handleMetadata}
             controls={false}
+          />
+        ) : hasImage ? (
+          <img
+            src={resolvedImageUrl}
+            alt=""
+            style={imageStyle}
           />
         ) : (
           <div style={placeholderStyle}>
@@ -63,6 +72,7 @@ export default function VideoPlayer({ videoUrl, onEnd }: Props) {
           animate={{ opacity: 1 }}
           transition={{ delay: hasVideo ? 0 : 1.5 }}
         >
+
           המשך ←
         </motion.button>
       </div>
@@ -98,6 +108,16 @@ const videoStyle: CSSProperties = {
 };
 
 const verticalVideoStyle: CSSProperties = {
+  maxHeight: '65vh',
+  maxWidth: '100%',
+  width: 'auto',
+  borderRadius: theme.borderRadius.lg,
+  border: `2px solid ${theme.colors.cardBorder}`,
+  boxShadow: `0 8px 40px rgba(0, 0, 0, 0.5)`,
+  display: 'block',
+};
+
+const imageStyle: CSSProperties = {
   maxHeight: '65vh',
   maxWidth: '100%',
   width: 'auto',

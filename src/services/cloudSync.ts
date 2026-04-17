@@ -37,6 +37,7 @@ export async function saveToCloud(data: SyncableData): Promise<void> {
       ...q,
       imageUrl: await resolveMediaUrl(q.imageUrl),
       videoUrl: await resolveMediaUrl(q.videoUrl),
+      postAnswerImageUrl: await resolveMediaUrl(q.postAnswerImageUrl),
     }))
   );
 
