@@ -94,7 +94,7 @@ export default function AnswerGrid({
       {answers.map((answer, i) => (
         <motion.button
           key={i}
-          style={getButtonStyle(i)}
+          style={{ ...getButtonStyle(i), direction: 'rtl' }}
           onClick={() => onSelect(i)}
           initial={{ opacity: 0, y: 20 }}
           animate={{
